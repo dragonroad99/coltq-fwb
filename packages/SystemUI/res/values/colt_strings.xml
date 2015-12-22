@@ -373,4 +373,9 @@
     <string name="applock_fingerprint">&#160;or your fingerprint to unlock</string>
     <string name="applock_locked_notification">App is locked</string>
 
+    <!-- Navigation Bar tile -->
+    <string name="quick_settings_navbar_title">Navigation Bar</string>
+    <string name="accessibility_quick_settings_navbar_on">Navigation bar on</string>
+    <string name="accessibility_quick_settings_navbar_off">Navigation bar off</string>
+
 </resources>

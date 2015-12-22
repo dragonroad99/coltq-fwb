@@ -50,6 +50,7 @@ import com.android.systemui.qs.tiles.IntentTile;
 import com.android.systemui.qs.tiles.LocationTile;
 import com.android.systemui.qs.tiles.LteTile;
 import com.android.systemui.qs.tiles.MusicTile;
+import com.android.systemui.qs.tiles.NavBarTile;
 import com.android.systemui.qs.tiles.NfcTile;
 import com.android.systemui.qs.tiles.NightDisplayTile;
 import com.android.systemui.qs.tiles.RebootTile;
@@ -120,6 +121,7 @@ public class QSFactoryImpl implements QSFactory {
     private final Provider<FPSInfoTile> mFPSInfoTileProvider;
     private final Provider<SyncTile> mSyncTileProvider;
     private final Provider<VpnTile> mVpnTileProvider;
+    private final Provider<NavBarTile> mNavBarTileProvider;
     private QSTileHost mHost;
 
     @Inject
@@ -163,7 +165,8 @@ public class QSFactoryImpl implements QSFactory {
             Provider<GamingModeTile> gamingModeTileProvider,
             Provider<FPSInfoTile> fpsInfoTileProvider,
             Provider<SyncTile> syncTileProvider,
-            Provider<VpnTile> vpnTileProvider) {
+            Provider<VpnTile> vpnTileProvider,
+            Provider<NavBarTile> navBarTileProvider) {
         mWifiTileProvider = wifiTileProvider;
         mBluetoothTileProvider = bluetoothTileProvider;
         mCellularTileProvider = cellularTileProvider;
@@ -205,6 +208,7 @@ public class QSFactoryImpl implements QSFactory {
         mFPSInfoTileProvider = fpsInfoTileProvider;
         mSyncTileProvider = syncTileProvider;
         mVpnTileProvider = vpnTileProvider;
+        mNavBarTileProvider = navBarTileProvider;
     }
 
     public void setHost(QSTileHost host) {
@@ -304,6 +308,8 @@ public class QSFactoryImpl implements QSFactory {
                 return new ThemeTile(mHost);
             case "vpn":
                 return mVpnTileProvider.get();
+            case "navbar":
+                return mNavBarTileProvider.get();
         }
 
         // Intent tiles.
