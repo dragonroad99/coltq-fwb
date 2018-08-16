@@ -747,6 +747,8 @@ public class StatusBar extends SystemUI implements DemoMode,
     private boolean mIsLauncherShowing;
     private ComponentName mTaskComponentName = null;
 
+    private boolean mShowNavBar;
+
     @Override
     public void onActiveStateChanged(int code, int uid, String packageName, boolean active) {
         Dependency.get(MAIN_HANDLER).post(() -> {
@@ -1061,7 +1063,7 @@ public class StatusBar extends SystemUI implements DemoMode,
         mNotificationLogger.setHeadsUpManager(mHeadsUpManager);
         putComponent(HeadsUpManager.class, mHeadsUpManager);
 
-        createNavigationBar(result);
+        updateNavigationBar(true);
 
         if (ENABLE_LOCKSCREEN_WALLPAPER && mWallpaperSupported) {
             mLockscreenWallpaper = new LockscreenWallpaper(mContext, this, mHandler);
@@ -4606,6 +4608,9 @@ public class StatusBar extends SystemUI implements DemoMode,
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.BACK_SWIPE_TYPE),
                     false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.FORCE_SHOW_NAVBAR),
+                    false, this, UserHandle.USER_ALL);
         }
 
         @Override
@@ -4669,6 +4674,7 @@ public class StatusBar extends SystemUI implements DemoMode,
 	    setHideArrowForBackGesture();
             setMediaHeadsup();
             setGestureNavOptions();
+            updateNavigationBar(false);
        }
     }
 
@@ -5648,4 +5654,21 @@ public class StatusBar extends SystemUI implements DemoMode,
         }
     }
 
+    private void updateNavigationBar(boolean init) {
+        boolean showNavBar = ColtUtils.deviceSupportNavigationBar(mContext);
+        if (init) {
+            if (showNavBar) {
+                mNavigationBarController.createNavigationBars(true, null);
+            }
+        } else {
+            if (showNavBar != mShowNavBar) {
+                if (showNavBar) {
+                    mNavigationBarController.createNavigationBars(true, null);
+                } else {
+                    mNavigationBarController.removeNavigationBar(mDisplayId);
+                }
+            }
+        }
+        mShowNavBar = showNavBar;
+    }
 }
