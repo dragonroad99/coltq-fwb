@@ -91,6 +91,7 @@ public class QSContainerImpl extends FrameLayout implements
     private int mHeaderImageHeight;
 
     private boolean mQsBackgroundAlpha;
+    private boolean mForceHideQsStatusBar;
     private int mQsBackGroundColor;
     private int mQsBackGroundColorWall;
     private int mCurrentColor;
@@ -127,6 +128,7 @@ public class QSContainerImpl extends FrameLayout implements
         mQsBackGroundNew = getContext().getDrawable(R.drawable.qs_background_primary_new);
         mBackgroundImage = findViewById(R.id.qs_header_image_view);
         mBackgroundImage.setClipToOutline(true);
+        mForceHideQsStatusBar = mContext.getResources().getBoolean(R.bool.qs_status_bar_hidden);
         mColorExtractor = Dependency.get(SysuiColorExtractor.class);
         updateSettings();
 
@@ -154,7 +156,7 @@ public class QSContainerImpl extends FrameLayout implements
         mLandscape = newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE;
 
         // Hide the backgrounds when in landscape mode.
-        if (mLandscape) {
+        if (mLandscape || mForceHideQsStatusBar) {
             mBackgroundGradient.setVisibility(View.INVISIBLE);
         } else if (!mQsBackgroundAlpha || !mLandscape) {
             mBackgroundGradient.setVisibility(View.VISIBLE);
@@ -513,7 +515,7 @@ public class QSContainerImpl extends FrameLayout implements
     }
 
     private void updateStatusbarVisibility() {
-        boolean shouldHideStatusbar = mLandscape && !mHeaderImageEnabled;
+        boolean shouldHideStatusbar = (mLandscape || mForceHideQsStatusBar) && !mHeaderImageEnabled;
         mStatusBarBackground.setVisibility(shouldHideStatusbar ? View.INVISIBLE : View.VISIBLE);
     }
 
