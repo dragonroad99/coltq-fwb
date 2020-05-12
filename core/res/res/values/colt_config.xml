@@ -186,4 +186,7 @@
     <!-- True if your device have home button and want to use it as wake button-->
     <bool name="config_enableHomeButtonWake">false</bool>
 
+    <!-- Whether device has a notch -->
+    <bool name="config_haveNotch">false</bool>
+
 </resources>
