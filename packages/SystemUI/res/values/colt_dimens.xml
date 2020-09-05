@@ -90,4 +90,7 @@
     <dimen name="config_customCutoutTopHeight">0.0px</dimen>
     <dimen name="config_customCutoutBottomWidth">0.0px</dimen>
     <dimen name="config_customCutoutBottomHeight">0.0px</dimen>
+   
+    <!-- volume dialog -->
+    <dimen name="volume_dialog_row_margin_bottom">8dp</dimen>
 </resources>
