@@ -24,7 +24,78 @@
     android:clipToPadding="false"
     android:theme="@style/qs_theme">
 
-    <LinearLayout
+    <FrameLayout
+        android:id="@+id/volume_row_slider_frame"
+        android:layout_width="@dimen/volume_dialog_panel_width"
+        android:layout_height="@dimen/volume_dialog_slider_height">
+
+        <SeekBar
+            android:id="@+id/volume_row_slider"
+            android:layout_width="@dimen/volume_dialog_slider_height"
+            android:layout_height="@dimen/volume_dialog_panel_width"
+            android:layout_gravity="center"
+            android:background="@null"
+            android:clickable="true"
+            android:layoutDirection="rtl"
+            android:paddingBottom="0dp"
+            android:paddingEnd="0dp"
+            android:paddingStart="0dp"
+            android:paddingTop="0dp"
+            android:progressDrawable="@drawable/volume_dialog_seekbar"
+            android:rotation="90"
+            android:thumb="@android:color/transparent" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:orientation="vertical">
+
+            <com.android.systemui.statusbar.AlphaOptimizedImageView
+                android:id="@+id/volume_row_icon"
+                android:layout_width="@dimen/volume_dialog_row_icon_size"
+                android:layout_height="@dimen/volume_dialog_tap_target_size"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="-12dp"
+                android:clickable="false"
+                android:layoutDirection="ltr"
+                android:scaleType="fitCenter"
+                android:soundEffectsEnabled="false"
+                android:tint="?android:attr/colorAccent" />
+
+            <com.android.systemui.statusbar.AlphaOptimizedTextView
+                android:id="@+id/volume_row_header"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|center_horizontal"
+                android:layout_marginBottom="10dp"
+                android:ellipsize="end"
+                android:gravity="bottom|center_horizontal"
+                android:layoutDirection="ltr"
+                android:maxLength="10"
+                android:maxLines="1"
+                android:textAppearance="@style/TextAppearance.Volume.Header"
+                android:textColor="?android:attr/colorAccent"
+                android:textStyle="bold" />
+
+            <com.android.keyguard.AlphaOptimizedImageButton
+                android:id="@+id/volume_row_app_icon"
+                style="@style/VolumeButtons"
+                android:visibility="gone"
+                android:layout_width="@dimen/volume_dialog_tap_target_size"
+                android:layout_height="@dimen/volume_dialog_tap_target_size"
+                android:background="@drawable/ripple_drawable_20dp"
+                android:layout_marginBottom="@dimen/volume_dialog_row_margin_bottom"
+                android:padding="@dimen/volume_row_app_icon_padding"
+                android:soundEffectsEnabled="false"
+                android:scaleType="centerInside" />
+
+        </LinearLayout>
+    </FrameLayout>
+
+    <include
+        layout="@layout/volume_dnd_icon"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_width="match_parent"
         android:gravity="center"
