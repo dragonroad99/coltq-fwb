@@ -121,6 +121,9 @@ public class VolumeDialogImpl implements VolumeDialog,
     private static final long USER_ATTEMPT_GRACE_PERIOD = 1000;
     private static final int UPDATE_ANIMATION_DURATION = 80;
 
+    public static final String SHOW_APP_VOLUME =
+            "system:" + Settings.System.SHOW_APP_VOLUME;
+
     static final int DIALOG_TIMEOUT_MILLIS = 3000;
     static final int DIALOG_SAFETYWARNING_TIMEOUT_MILLIS = 5000;
     static final int DIALOG_ODI_CAPTIONS_TOOLTIP_TIMEOUT_MILLIS = 5000;
@@ -172,12 +175,24 @@ public class VolumeDialogImpl implements VolumeDialog,
     // Volume panel placement left or right
     private boolean mVolumePanelOnLeft;
 
-    private boolean isMediaShowing = true;
-    private boolean isRingerShowing = false;
-    private boolean isNotificationShowing = false;
-    private boolean isAlarmShowing = false;
-    private boolean isVoiceShowing = false;
-    private boolean isBTSCOShowing = false;
+    private int mTimeOut = 3;
+
+    private boolean mNotificationLinked;
+
+    private SettingsObserver settingsObserver;
+
+    private boolean mDarkMode;
+    private boolean mVibrateOnSlider;
+    private boolean mShowAppVolume;
+
+    private boolean mExpanded;
+    private boolean mShowingMediaDevices;
+
+    private float mElevation;
+    private float mHeight, mWidth, mSpacer;
+
+    private final List<MediaOutputRow> mMediaOutputRows = new ArrayList<>();
+    private final List<MediaDevice> mMediaDevices = new ArrayList<>();
 
     private class SettingsObserver extends ContentObserver {
         SettingsObserver(Handler handler) {
@@ -228,6 +243,30 @@ public class VolumeDialogImpl implements VolumeDialog,
                 Prefs.getBoolean(context, Prefs.Key.HAS_SEEN_ODI_CAPTIONS_TOOLTIP, false);
         mVolumePanelOnLeft = Settings.System.getInt(context.getContentResolver(),
 		Settings.System.AUDIO_PANEL_LOCATION, 0) != 0;
+        mHasAlertSlider = mContext.getResources().getBoolean(com.android.internal.R.bool.config_hasAlertSlider);
+
+        settingsObserver = new SettingsObserver(mHandler);
+        settingsObserver.observe();
+        mHasAlertSlider = mContext.getResources().getBoolean(
+                com.android.internal.R.bool.config_hasAlertSlider);
+        mVibrateOnSlider = mContext.getResources().getBoolean(R.bool.config_vibrateOnIconAnimation);
+        mElevation = mContext.getResources().getDimension(R.dimen.volume_dialog_elevation);
+        mSpacer = mContext.getResources().getDimension(R.dimen.volume_dialog_row_spacer);
+
+        setDarkMode();
+
+        mHandler.postDelayed(() -> {
+            if (mLocalMediaManager == null) {
+                mLocalMediaManager = new LocalMediaManager(mContext, TAG, null);
+                mLocalMediaManager.registerCallback(VolumeDialogImpl.this);
+            }
+        }, 3000);
+
+        mTunerService = Dependency.get(TunerService.class);
+        Dependency.get(TunerService.class).addTunable(mTunable, SHOW_APP_VOLUME);
+        ColorMatrix colorMatrix = new ColorMatrix();
+        colorMatrix.setSaturation(0);
+        mAppIconMuteColorFilter = new ColorMatrixColorFilter(colorMatrix);
     }
 
     @Override
@@ -393,6 +432,22 @@ public class VolumeDialogImpl implements VolumeDialog,
         final float x = mDialogView.getWidth() / 2.0f;
         return mVolumePanelOnLeft ? -x : x;
     }
+
+    private final TunerService.Tunable mTunable = new TunerService.Tunable() {
+        @Override
+        public void onTuningChanged(String key, String newValue) {
+            if (key.equals(SHOW_APP_VOLUME)) {
+                final boolean showAppVolume = TunerService.parseIntegerSwitch(newValue, false);
+                if (mShowAppVolume != showAppVolume) {
+                    mShowAppVolume = showAppVolume;
+                    mHandler.post(() -> {
+                        // Trigger panel rebuild on next show
+                        mConfigChanged = true;
+                    });
+                }
+            }
+        }
+    };
 
     protected ViewGroup getDialogView() {
         return mDialogView;
@@ -594,7 +649,7 @@ public class VolumeDialogImpl implements VolumeDialog,
             final VolumeRow row = mAppRows.get(i);
             removeAppRow(row);
         }
-        if (!mShowAppVolume || !expand) return;
+        if (!mShowAppVolume) return;
         List<AppTrackData> trackDatas = mController.getAudioManager().listAppTrackDatas();
         for (AppTrackData data : trackDatas) {
             if (data.isActive()) {
