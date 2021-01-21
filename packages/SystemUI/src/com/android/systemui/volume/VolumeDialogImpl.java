@@ -586,6 +586,253 @@ public class VolumeDialogImpl implements VolumeDialog,
                 mExpandRows.setExpanded(mExpanded);
             });
         }
+        updateAppRows(expand);
+    }
+
+    private void updateAppRows(boolean expand) {
+        for (int i = mAppRows.size() - 1; i >= 0; i--) {
+            final VolumeRow row = mAppRows.get(i);
+            removeAppRow(row);
+        }
+        if (!mShowAppVolume || !expand) return;
+        List<AppTrackData> trackDatas = mController.getAudioManager().listAppTrackDatas();
+        for (AppTrackData data : trackDatas) {
+            if (data.isActive()) {
+                addAppRow(data);
+            }
+        }
+    }
+
+    private Animator circularReveal(View view, int x, int endRadius) {
+        if (view == null) return null;
+
+        Animator anim = ViewAnimationUtils.createCircularReveal(view, x,
+            isLandscape() ? 0 : (int) mHeight, 0, endRadius);
+
+        anim.setDuration(DIALOG_SHOW_ANIMATION_DURATION);
+        anim.setInterpolator(new SystemUIInterpolators.LogDecelerateInterpolator());
+        anim.addListener(new Animator.AnimatorListener() {
+            private boolean mIsCancelled;
+            private ViewPropertyAnimator mRowsAnimator;
+
+            @Override
+            public void onAnimationStart(Animator animation) {
+                mIsCancelled = false;
+                Util.setVisOrGone(view, true);
+                mRowsAnimator = mDialogRowsView.animate()
+                    .alpha(0f)
+                    .setDuration(DIALOG_SHOW_ANIMATION_DURATION)
+                    .setInterpolator(new SystemUIInterpolators.LogDecelerateInterpolator());
+                mRowsAnimator.start();
+            }
+
+            @Override
+            public void onAnimationEnd (Animator animation) {
+                Util.setVisOrGone(mDialogRowsView, mIsCancelled);
+                mHandler.postDelayed(() -> mMediaTitleText.setSelected(true), 100);
+            }
+
+            @Override
+            public void onAnimationRepeat (Animator animation) { }
+
+            @Override
+            public void onAnimationCancel (Animator animation) {
+                mIsCancelled = true;
+                mRowsAnimator.cancel();
+            }
+        });
+        return anim;
+    }
+
+    private Animator circularExit(View view, int x, int endRadius) {
+        if (view == null) return null;
+
+        Animator anim = ViewAnimationUtils.createCircularReveal(view, x,
+            isLandscape() ? 0 : (int) mHeight, endRadius, 0);
+
+        anim.setDuration(DIALOG_SHOW_ANIMATION_DURATION);
+        anim.setInterpolator(new SystemUIInterpolators.LogDecelerateInterpolator());
+        anim.addListener(new Animator.AnimatorListener() {
+            private boolean mIsCancelled;
+
+            @Override
+            public void onAnimationStart(Animator animation) {
+                mIsCancelled = false;
+                Util.setVisOrGone(mDialogRowsView, true);
+                mDialogRowsView.setAlpha(1f);
+            }
+
+            @Override
+            public void onAnimationEnd (Animator animation) {
+                Util.setVisOrGone(view, mIsCancelled);
+                mMediaTitleText.setSelected(false);
+            }
+
+            @Override
+            public void onAnimationRepeat (Animator animation) { }
+
+            @Override
+            public void onAnimationCancel (Animator animation) {
+                mIsCancelled = true;
+            }
+        });
+        return anim;
+    }
+
+    private void animateViewIn(View view, boolean wasVisible, float startX, float startZ) {
+        if (view == null) return;
+
+        float startAlpha = 0f;
+        if (wasVisible) {
+            startZ = 0;
+            startAlpha = 1f;
+        } else {
+            startZ = -startZ;
+        }
+
+        view.setTranslationX(mLeftVolumeRocker ? -startX : startX);
+        view.setTranslationZ(startZ);
+        view.setAlpha(startAlpha);
+        Util.setVisOrGone(view, true);
+        view.animate()
+            .alpha(1f)
+            .translationX(0f)
+            .translationZ(0f)
+            .withLayer()
+            .setDuration(DIALOG_SHOW_ANIMATION_DURATION)
+            .setInterpolator(new SystemUIInterpolators.LogDecelerateInterpolator())
+            .withEndAction(() -> {
+                Util.setVisOrGone(view, true);
+                view.setTranslationX(0f);
+                view.setTranslationZ(0f);
+            })
+            .start();
+    }
+
+    private void animateViewOut(View view, boolean stayVisible, float endX, float endZ) {
+        if (view == null) return;
+
+        float endAlpha = 0f;
+        if (stayVisible) {
+            endZ = 0;
+            endAlpha = 1f;
+        } else {
+            endZ = -endZ;
+        }
+
+        view.animate()
+            .alpha(endAlpha)
+            .translationX(mLeftVolumeRocker ? -endX : endX)
+            .translationZ(endZ)
+            .withLayer()
+            .setDuration(DIALOG_SHOW_ANIMATION_DURATION)
+            .setInterpolator(new SystemUIInterpolators.LogDecelerateInterpolator())
+            .withEndAction(() -> {
+                Util.setVisOrGone(view, stayVisible);
+                view.setTranslationX(0);
+                view.setTranslationZ(0);
+                view.setAlpha(1);
+            })
+            .start();
+    }
+
+    @Override
+    public void onDeviceListUpdate(List<MediaDevice> devices) {
+        mMediaDevices.clear();
+        mMediaDevices.addAll(devices);
+        if (!mHandler.hasMessages(H.UPDATE_MEDIA_OUTPUT_VIEW)) {
+            mHandler.sendEmptyMessageDelayed(H.UPDATE_MEDIA_OUTPUT_VIEW, 30);
+        }
+    }
+
+    @Override
+    public void onSelectedDeviceStateChanged(MediaDevice device, int state) {
+        // Do nothing
+    }
+
+    private void updateMediaOutputViewH() {
+        // update/add/remove existing views
+        final String activeText = mContext
+            .getString(com.android.settingslib.R.string.bluetooth_active_no_battery_level);
+        for (MediaOutputRow row : mMediaOutputRows) {
+            if (mMediaDevices.contains(row.device)) {
+                if (row.device.isConnected()) {
+                    row.name.setText(row.device.getName());
+                    if (row.device.getSummary() != null) {
+                        Util.setVisOrGone(row.summary, !row.device.getSummary().equals(""));
+                        row.summary.setText(row.device.getSummary());
+                        Util.setVisOrGone(row.selected,
+                                row.device.getSummary().contains(activeText));
+                    } else {
+                        Util.setVisOrGone(row.summary, false);
+                        Util.setVisOrGone(row.selected, false);
+                    }
+                    if (!row.addedToGroup) {
+                        mMediaOutputView.addView(row.view);
+                        row.addedToGroup = true;
+                    }
+                } else {
+                    mMediaOutputView.removeView(row.view);
+                    row.addedToGroup = false;
+                }
+                // remove the device that has been handled
+                mMediaDevices.remove(row.device);
+            } else {
+                mMediaOutputView.removeView(row.view);
+                row.addedToGroup = false;
+            }
+        }
+
+
+        // handle the remaining devices
+        for (MediaDevice device : mMediaDevices) {
+            if (device.isConnected()) {
+                // This device does not have a corresponding row yet, make one.
+                MediaOutputRow row = new MediaOutputRow();
+                row.device = device;
+                row.view = mDialog.getLayoutInflater().inflate(R.layout.volume_dialog_media_output,
+                        mMediaOutputView, false);
+                row.view.setOnClickListener(v -> {
+                        provideTouchHapticH(VibrationEffect.get(VibrationEffect.EFFECT_CLICK));
+                        mLocalMediaManager.connectDevice(device);
+                });
+                row.name = row.view.findViewById(R.id.media_output_text);
+                row.summary = row.view.findViewById(R.id.media_output_summary);
+                row.selected = row.view.findViewById(R.id.media_output_selected);
+                row.icon = row.view.findViewById(R.id.media_output_icon);
+                Drawable drawable = device.getIcon();
+                if (drawable == null) {
+                    drawable = mContext.getDrawable(
+                            com.android.internal.R.drawable.ic_bt_headphones_a2dp);
+                }
+                row.icon.setImageDrawable(drawable);
+
+                row.name.setText(device.getName());
+                if (device.getSummary() != null) {
+                    Util.setVisOrGone(row.summary, !device.getSummary().equals(""));
+                    row.summary.setText(device.getSummary());
+                    Util.setVisOrGone(row.selected, row.device.getSummary().contains(activeText));
+                } else {
+                    Util.setVisOrGone(row.summary, false);
+                    Util.setVisOrGone(row.selected, false);
+                }
+                row.name.setSelected(true);
+                row.summary.setSelected(true);
+
+                row.addedToGroup = true;
+                mMediaOutputView.addView(row.view);
+                mMediaOutputRows.add(row);
+            }
+        }
+        if (mMediaOutputView.getChildCount() == 1) {
+            // This means there are no external devices connected
+            removeAllMediaOutputRows();
+        }
+    }
+
+    private void removeAllMediaOutputRows() {
+        mMediaOutputView.removeAllViews();
+        mMediaOutputRows.clear();
     }
 
     public void initRingerH() {
