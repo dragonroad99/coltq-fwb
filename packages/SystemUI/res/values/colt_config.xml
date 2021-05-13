@@ -82,8 +82,8 @@
     <item name="system_icon_area_weight" format="float" type="integer">1</item>
 
     <!-- Max visible notification icons -->
-    <integer name="config_maxVisibleNotificationIcons">4</integer>
-    <integer name="config_maxVisibleNotificationIconsWhenDark">5</integer>
+    <integer name="config_maxVisibleNotificationIcons">7</integer>
+    <integer name="config_maxVisibleNotificationIconsWhenDark">8</integer>
 
     <!-- Burn in protection -->
     <bool name="config_statusBarBurnInProtection">false</bool>
