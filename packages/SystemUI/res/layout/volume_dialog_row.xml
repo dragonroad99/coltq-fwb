@@ -129,19 +129,3 @@
                 android:background="@null"
                 android:rotation="90" />
         </FrameLayout>
-
-        <com.android.keyguard.AlphaOptimizedImageButton
-            android:id="@+id/volume_row_icon"
-            style="@style/VolumeButtons"
-            android:layout_width="@dimen/volume_dialog_tap_target_size"
-            android:layout_height="@dimen/volume_dialog_tap_target_size"
-            android:background="@drawable/ripple_drawable_20dp"
-            android:layout_marginTop="@dimen/volume_dialog_row_icon_margintop"
-            android:tint="@android:color/white"
-            android:clickable="false"
-            android:soundEffectsEnabled="false" />
-    </LinearLayout>
-
-    <include layout="@layout/volume_dnd_icon"/>
-
-</FrameLayout>
